@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.study.domain.code.CodeMapper">
+
+    <!-- tb_code 테이블 전체 컬럼 -->
+    <sql id="codeColumns">
+          id
+        , cd_group
+        , name
+        , delete_yn
+        , created_date
+        , modified_date
+    </sql>
+
+
+    <!-- 코드 저장 -->
+    <insert id="save" parameterType="com.study.domain.code.CodeRequest" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO tb_code (
+            <include refid="codeColumns" />
+        ) VALUES (
+              #{id}
+            , #{cdGroup}
+            , #{name}
+            , 0
+            , NOW()
+            , NULL
+        )
+    </insert>
+
+
+    <!-- 코드 상세정보 조회 -->
+    <select id="findById" parameterType="long" resultType="com.study.domain.code.CodeResponse">
+        SELECT
+            <include refid="codeColumns" />
+        FROM
+            tb_code
+        WHERE
+            id = #{value}
+    </select>
+
+
+    <!-- 코드 수정 -->
+    <update id="update" parameterType="com.study.domain.code.CodeRequest">
+        UPDATE tb_code
+        SET
+              modified_date = NOW()
+            , cd_group = #{cdGroup}
+            , name = #{name}
+        WHERE
+            id = #{id}
+    </update>
+
+
+    <!-- 코드 삭제 -->
+    <delete id="deleteById" parameterType="long">
+        UPDATE tb_code
+        SET
+            delete_yn = 1
+        WHERE
+            id = #{id}
+    </delete>
+
+
+     <!-- 전체코드 리스트 조회 -->
+    <select id="findAll" parameterType="com.study.common.dto.SearchDto" resultType="com.study.domain.code.CodeResponse">
+        /*findAll>>>>>>>>*/
+        SELECT
+            <include refid="codeColumns" />
+        FROM
+            tb_code
+        WHERE
+            delete_yn = 0
+            <include refid="search" />
+        ORDER BY
+            id DESC
+          LIMIT #{pagination.limitStart}, #{recordSize}
+    </select>
+
+        <!-- 카테코드 리스트 조회 -->
+    <select id="findCt" parameterType="com.study.domain.code.CodeResponse" resultType="com.study.domain.code.CodeResponse">
+        SELECT
+            <include refid="codeColumns" />
+        FROM
+            tb_code
+        WHERE
+            delete_yn = 0
+        AND
+            cd_group = #{cdGroup}
+    </select>
+
+
+    <!-- 코드 수 카운팅 -->
+    <select id="count" parameterType="com.study.common.dto.SearchDto" resultType="int">
+        SELECT
+            COUNT(*)
+        FROM
+            tb_code
+        WHERE
+            delete_yn = 0
+            <include refid="search" />
+    </select>
+
+      <!-- 게시글 검색 -->
+    <sql id="search">
+        <!-- 검색 키워드가 있을 때 -->
+        <if test="keyword != null and keyword != ''">
+            <choose>
+                <!-- 검색 유형이 있을 때 -->
+                <when test="searchType != null and searchType != ''">
+                    <choose>
+                        <when test="'cd_group'.equals( searchType )">
+                            AND cd_group LIKE CONCAT('%', #{keyword}, '%')
+                        </when>
+                        <when test="'name'.equals( searchType )">
+                            AND name LIKE CONCAT('%', #{keyword}, '%')
+                        </when>
+                    </choose>
+                </when>
+
+                <!-- 전체 검색일 때 -->
+                <otherwise>
+                    AND (
+                           cd_group LIKE CONCAT('%', #{keyword}, '%')
+                        OR name LIKE CONCAT('%', #{keyword}, '%')
+                    )
+                </otherwise>
+            </choose>
+        </if>
+    </sql>
+</mapper>
